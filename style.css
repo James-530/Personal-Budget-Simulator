@@ -82,14 +82,119 @@ li {
 }
 
 section {
+  position: relative;
   padding: 8rem 12%;
   width: 100%;
   color: var(--secondary-text);
-  position: relative;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.subtitle {
+  font-size: 1rem;
+  font-weight: 300;
 }
 
 .intro {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 2rem;
+  padding-top: 8rem;
+  padding-bottom: 1rem;
+}
+
+.intro p {
+  font-weight: 100;
+}
+
+.intro title {
+  font-size: 1rem;
+  font-weight: 200;
+}
+
+.intro .subtitle {
+  font-size: 2.5rem;
+  font-weight: 600;
+}
+
+.intro p {
+  align-self: flex-end;
+}
+
+.simulator {
+  padding-top: 1rem;
+}
+
+.simulator-card {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  grid-template-areas:
+    "income expenses"
+    "purchase purchase";
+  column-gap: 3rem;
+  border: 2px solid var(--line);
+  border-radius: 3rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.income {
+  grid-area: income;
+  padding: 2rem;
+  border-right: 2px solid var(--line);
+}
+
+.income-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.expenses {
+  grid-area: expenses;
+  padding: 2rem;
+}
+
+.purchase {
+  grid-area: purchase;
+  padding: 2rem 2rem 3rem;
+  border-top: 2px solid var(--line);
+}
+
+.income input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--secondary-text);
+  border-bottom: 2px solid var(--line);
+  font-size: 2rem;
+}
+
+.income-input {
+  position: relative;
+}
+
+.income-input span {
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  font-size: 1.5rem;
+  transform: translateY(-50%);
+  color: var(--secondary-text);
+}
+
+.income-input input {
+  padding-left: 2rem;
+  background: transparent;
+  color: var(--secondary-text);
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
