@@ -89,14 +89,12 @@ section {
   color: var(--secondary-text);
 }
 
-.title {
+.expenses-title,
+.header-title,
+.purchase-title {
   font-size: 1.5rem;
   font-weight: 600;
-}
-
-.subtitle {
-  font-size: 1rem;
-  font-weight: 300;
+  text-wrap: nowrap;
 }
 
 .intro {
@@ -117,17 +115,13 @@ section {
   font-weight: 200;
 }
 
-.intro .subtitle {
-  font-size: 2.5rem;
-  font-weight: 600;
-}
-
 .intro p {
   align-self: flex-end;
 }
 
 .simulator {
   padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 .simulator-card {
@@ -320,38 +314,158 @@ input[type="number"]::-webkit-outer-spin-button {
   font-size: 1.5rem;
   border: solid 2px var(--line);
   background-color: transparent;
-  color: var(--text);
+  color: var(--secondary-text);
   border-radius: 10px;
   padding: 0 1rem;
   height: 3rem;
   margin-top: 0;
   align-self: flex-end;
   cursor: pointer;
+  transition: 0.2s ease-in-out;
 }
 
-@media (max-width: 600px) {
-  .intro .title {
-    font-size: 1rem;
-  }
-  .intro .subtitle {
-    font-size: 1.8rem;
-  }
-  .intro p {
-    font-size: 1rem;
-  }
-
-  .purchase-card {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .simulate {
-    margin-top: 1rem;
-    width: 100%;
-  }
+.simulate:hover {
+  background-color: var(--hover);
 }
 
-@media (max-width: 767px) {
+.remaining-amount::before,
+.available-amount::before,
+.cost::before {
+  content: "$";
+}
+
+.budget-percentage::after {
+  content: "%";
+}
+
+.budget-left::after {
+  content: "% left";
+}
+
+.simulation-result {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.result-card {
+  column-gap: 3rem;
+  border: 2px solid var(--line);
+  border-radius: 3rem;
+  padding: 2rem;
+}
+
+.result-header,
+.remaining-balance,
+.budget-breakdown,
+.purchase-summary {
+  margin-bottom: 3rem;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+.budget-status {
+  background-color: var(--accent);
+  color: var(--base);
+  padding: 0.3rem 0.5rem;
+  border-radius: 2rem;
+  margin-left: auto;
+  text-wrap: nowrap;
+}
+
+.remaining-amount {
+  font-size: 3.5rem;
+}
+
+.budget-breakdown {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+}
+
+.budget-breakdown > p:first-child {
+  grid-column: 1;
+}
+
+.budget-percentage {
+  grid-column: 2;
+  text-align: right;
+}
+
+.budget-bar,
+.budget-legend {
+  grid-column: 1 / -1;
+}
+
+.budget-legend {
+  display: flex;
+}
+
+.legend-guide {
+  display: flex;
+  gap: 2rem;
+}
+
+.budget-left {
+  margin-left: auto;
+}
+
+.purchase-summary {
+  padding: 1rem;
+  background-color: var(--hover);
+  color: var(--secondary-text);
+  border: 2px solid var(--line);
+  border-radius: 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+}
+
+.purchase-summary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  background-color: var(--line);
+}
+
+.summary-item:first-child {
+  padding-right: 1rem;
+}
+
+.summary-item:nth-child(2) {
+  padding-left: 1rem;
+}
+
+.result-message {
+  background-color: var(--hover);
+  border: 2px solid var(--line);
+  border-radius: 1rem;
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+.purchase-summary h2 {
+  color: var(--text);
+}
+
+@media (max-width: 800px) {
+  section {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .intro {
+    padding-top: 7rem;
+    align-items: flex-start;
+  }
+
   .nav-links {
     gap: 0.5rem;
   }
@@ -374,40 +488,116 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 
   .income {
-    border: 2px solid var(--line);
+    border: none;
+    border-bottom: 2px solid var(--line);
+    padding: 1.5rem;
   }
 
   .expenses {
-    padding: 2rem 2rem 3rem;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 1.5rem;
+    gap: 0.75rem;
   }
 
-  .purchase {
-    font-size: 0.5rem;
+  .expenses-title {
+    font-size: clamp(0.875rem, 3.5vw, 1.25rem);
+    white-space: normal;
+  }
+
+  .total-expenses {
+    font-size: clamp(1.25rem, 6vw, 2rem);
   }
 
   .purchase-card {
-    display: flex;
     flex-direction: column;
+    gap: 1rem;
   }
 
-  .simulate {
-    margin-top: 1rem;
+  .purchase-input,
+  .cost-input {
+    flex: initial;
     width: 100%;
+    min-width: 0;
   }
 
   .purchase label {
     font-size: 1.2rem;
-    text-wrap: nowrap;
+    text-wrap: wrap;
+  }
+
+  .purchase input {
+    min-width: 0;
   }
 
   .simulate {
-    font-size: 0.8rem;
+    align-self: stretch;
+    width: 100%;
+    margin-top: 0;
+    font-size: 1rem;
   }
 
   .expenses-input .money-input {
-    width: 25%;
+    flex: 0 0 38%;
+    width: auto;
+    min-width: 0;
   }
-}
 
-@media (max-width: 1023px) {
+  .expense-row {
+    gap: 0.5rem;
+    padding: 0.75rem 0.5rem;
+    text-wrap: wrap;
+  }
+
+  .expense-row label {
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .result-card {
+    min-width: 0;
+    padding: 1.5rem;
+    border-radius: 1.5rem;
+  }
+
+  .result-header {
+    flex-wrap: wrap;
+  }
+
+  .budget-status {
+    margin-left: 0;
+  }
+
+  .remaining-amount {
+    font-size: clamp(2rem, 10vw, 3.5rem);
+    overflow-wrap: anywhere;
+  }
+
+  .budget-legend,
+  .legend-guide {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .purchase-summary {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .purchase-summary::after {
+    display: none;
+  }
+
+  .summary-item:first-child,
+  .summary-item:nth-child(2) {
+    padding: 0;
+  }
+
+  .summary-item h2 {
+    overflow-wrap: anywhere;
+  }
+
+  .result-message {
+    overflow-wrap: anywhere;
+  }
 }

@@ -26,103 +26,159 @@
 
     <section class="intro">
       <div class="intro-header">
-        <h3 class="title"><i class="fa-solid fa-minus"></i>Budget Simulator</h3>
-        <h1 class="subtitle">See where your money can take you.</h1>
+        <h3 class="header-title">
+          <i class="fa-solid fa-minus"></i>Budget Simulator
+        </h3>
+        <h1>See where your money can take you.</h1>
       </div>
 
-        <p>
-          Adjust your monthly numbers, test a purchase, and understand the
-          impact before you spend.
-        </p>
-      </div>
+      <p>
+        Adjust your monthly numbers, test a purchase, and understand the impact
+        before you spend.
+      </p>
     </section>
 
     <section class="simulator">
       <div class="simulator-card">
         <div class="income">
           <div class="income-header">
-            <label for="income" class="title">Monthly Income</label>
+            <label for="income" class="title">MONTHLY INCOME</label>
           </div>
-          
-        <div class="money-input">
-          <span>$</span>
-          <input type="number" name="income" id="income" placeholder="0">
-        </div>
+
+          <div class="money-input">
+            <span>$</span>
+            <input type="number" name="income" id="income" placeholder="0" />
+          </div>
         </div>
 
         <div class="expenses">
+          <div class="expenses-header">
+            <h3 class="expenses-title">MONTHLY EXPENSES</h3>
+            <p>Tap any amount to edit</p>
+          </div>
 
-        <div class="expenses-header">
-          <h3 class="title">Monthly Expenses</h3>
-          <p>Tap any amount to edit</p>
+          <h1 class="total-expenses">0</h1>
+
+          <div class="expenses-input">
+            <div class="expense-row">
+              <label for="housing">Housing</label>
+
+              <div class="money-input">
+                <span>$</span>
+                <input type="number" id="housing" placeholder="0" />
+              </div>
+            </div>
+
+            <div class="expense-row">
+              <label for="food">Food & Dining</label>
+
+              <div class="money-input">
+                <span>$</span>
+                <input type="number" id="food" placeholder="0" />
+              </div>
+            </div>
+
+            <div class="expense-row">
+              <label for="transport">Transport</label>
+
+              <div class="money-input">
+                <span>$</span>
+                <input type="number" id="transport" placeholder="0" />
+              </div>
+            </div>
+
+            <div class="expense-row">
+              <label for="lifestyle">Lifestyle</label>
+
+              <div class="money-input">
+                <span>$</span>
+                <input type="number" id="lifestyle" placeholder="0" />
+              </div>
+            </div>
+          </div>
         </div>
-
-        <h1 class="total-expenses">0</h1>
-
-        <div class="expenses-input">
-
-          <div class="expense-row">
-            <label for="housing">Housing</label>
-
-            <div class="money-input">
-              <span>$</span>
-              <input type="number" id="housing" placeholder="0">
-            </div>
-          </div>
-
-          <div class="expense-row">
-            <label for="food">Food & Dining</label>
-
-            <div class="money-input">
-              <span>$</span>
-              <input type="number" id="food" placeholder="0">
-            </div>
-          </div>
-
-          <div class="expense-row">
-            <label for="transport">Transport</label>
-
-            <div class="money-input">
-              <span>$</span>
-              <input type="number" id="transport" placeholder="0">
-            </div>
-          </div>
-
-          <div class="expense-row">
-            <label for="lifestyle">Lifestyle</label>
-
-            <div class="money-input">
-              <span>$</span>
-              <input type="number" id="lifestyle" placeholder="0">
-            </div>
-          </div>
-
-        </div>
-
-      </div>
 
         <div class="purchase">
           <div class="purchase-header">
-            <h2 class="title">Try a potential purchase</h2>
-          <p class="subtitle">What are you thinking about buying?</p>
+            <h2 class="purchase-title">Try a potential purchase</h2>
+            <p>What are you thinking about buying?</p>
           </div>
-          
+
           <div class="purchase-card">
             <div class="purchase-input">
               <label for="purchase">Purchase</label>
-          <input type="text" name="Purchase" id="purchase" placeholder="e.g. New Laptop">
+              <input
+                type="text"
+                name="Purchase"
+                id="purchase"
+                placeholder="e.g. New Laptop"
+              />
             </div>
 
-          <div class="cost-input">
-            <label for="cost">Estimated Cost</label>
-          <input type="number" name="Estimated Cost" id="cost" placeholder="0">
+            <div class="cost-input">
+              <label for="cost">Estimated Cost</label>
+              <input
+                type="number"
+                name="Estimated Cost"
+                id="cost"
+                placeholder="0"
+              />
+            </div>
+
+            <button class="simulate">
+              Simulate <i class="fa-solid fa-arrow-right"></i>
+            </button>
           </div>
-          
-          <button class="simulate">Simulate <i class="fa-solid fa-arrow-right"></i></button>
-          </div>
-          
         </div>
-        
+      </div>
+    </section>
+
+    <section class="simulation-result">
+      <div class="result-card">
+        <div class="result-header">
+          <h3 class="title">AFTER THIS PURCHASE</h3>
+          <p class="budget-status">Within budget</p>
+        </div>
+
+        <div class="remaining-balance">
+          <p>You would have</p>
+          <h2 class="remaining-amount">0</h2>
+          <p>remaining this month</p>
+        </div>
+
+        <div class="budget-breakdown">
+          <p>Monthly budget used</p>
+          <p class="budget-percentage">0</p>
+
+          <div class="budget-bar">Line bar</div>
+
+          <div class="budget-legend">
+            <div class="legend-guide">
+              <span>Expenses</span>
+              <span>Purchase</span>
+            </div>
+            <p class="budget-left">0</p>
+          </div>
+        </div>
+
+        <div class="purchase-summary">
+          <div class="summary-item">
+            <p>Available now</p>
+            <h2 class="available-amount">0</h2>
+          </div>
+
+          <div class="summary-item">
+            <p>Purchase cost</p>
+            <h2 class="cost">0</h2>
+          </div>
+        </div>
+
+        <p class="result-message">
+          <i class="fa-solid fa-lightbulb"></i>
+          <span class="message-text">
+            Enter your budget and simulate a purchase to see the results.
+          </span>
+        </p>
       </div>
     </section>
   </body>
