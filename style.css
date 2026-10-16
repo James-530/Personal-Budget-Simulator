@@ -325,6 +325,10 @@ input[type="number"]::-webkit-outer-spin-button {
   padding: 0.5rem;
 }
 
+.purchase .money-input input {
+  padding-left: 2rem;
+}
+
 .purchase-input {
   flex: 2;
 }
@@ -531,7 +535,7 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 
   .logo-title {
-    font-size: 1.5rem;
+    font-size: 1.5em;
   }
 
   .intro {
