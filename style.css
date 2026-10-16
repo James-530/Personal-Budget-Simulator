@@ -36,32 +36,6 @@ header {
   z-index: 1000;
 }
 
-.nav-links {
-  display: flex;
-  gap: 1rem;
-  margin-left: auto;
-}
-
-li a {
-  display: block;
-  padding: 0.5rem 1rem;
-  border-radius: 3rem;
-  width: 100%;
-  transition: 0.2s ease-in-out;
-  color: var(--accent);
-  font-weight: 300;
-  border: 2px solid var(--line);
-}
-
-li a:hover {
-  background: var(--hover);
-}
-
-li {
-  margin: 0.5rem;
-  color: #34d399;
-}
-
 .logo-container {
   display: flex;
   justify-content: center;
@@ -80,6 +54,10 @@ li {
   font-weight: 600;
   cursor: default;
   text-wrap: nowrap;
+}
+
+.budget-status.is-over-budget {
+  background-color: #fca5a5;
 }
 
 section {
@@ -192,24 +170,23 @@ section {
 
 .expenses {
   grid-area: expenses;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-areas:
-    "header total"
-    "input input";
+  display: flex;
+  flex-direction: column;
   padding: 2rem;
   padding-left: 0;
-  gap: 1rem 2rem;
+  gap: 1rem;
 }
 
 .expense-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
-  text-wrap: nowrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(7rem, 0.75fr) auto;
+  align-items: end;
+  gap: 0.75rem;
   width: 100%;
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
   transition: background-color 0.2s ease;
 }
 
@@ -217,56 +194,102 @@ section {
   background-color: var(--hover);
 }
 
-.expenses-header {
-  grid-area: header;
+.expense-field {
+  min-width: 0;
+}
+
+.expense-field label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.875rem;
+}
+
+.expense-field input {
+  width: 100%;
+  min-width: 0;
+  height: 2.75rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  outline: none;
+  background-color: var(--base);
+  color: var(--text);
+  font-size: 1rem;
+  cursor: text;
+}
+
+.expense-field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgb(52 211 153 / 20%);
+}
+
+.expense-money-input {
+  position: relative;
+}
+
+.expense-money-input span {
+  position: absolute;
+  top: 50%;
+  left: 0.7rem;
+  color: var(--secondary-text);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.expense-money-input input {
+  padding-left: 1.8rem;
+}
+
+.remove-expense,
+.add-expense {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  background-color: transparent;
+  color: var(--accent);
+  font-size: 1rem;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.remove-expense {
+  color: var(--secondary-text);
+}
+
+.remove-expense:hover,
+.add-expense:hover {
+  border-color: var(--accent);
+  background-color: var(--hover);
+}
+
+.remove-expense:focus-visible,
+.add-expense:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.add-expense {
+  align-self: flex-start;
+}
+
+.expenses-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
 }
 
 .total-expenses {
-  grid-area: total;
-  margin: 0;
-  text-align: right;
-}
-
-.total-expenses::before {
-  content: "$";
-}
-
-.expenses-input {
-  grid-area: input;
-  display: grid;
-  gap: 0.5rem;
-}
-
-.expenses-input input {
-  background: transparent;
-  border: none;
-  outline: none;
+  min-width: 0;
   color: var(--text);
-  text-align: right;
-  width: 100%;
-}
-
-.expenses-input .money-input {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  width: 15%;
-  gap: 0.25rem;
-}
-
-.expenses-input .money-input span {
   font-size: 1.5rem;
-  color: var(--secondary-text);
-  opacity: 0.5;
-}
-
-.expenses-input .money-input input {
-  width: 100%;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text);
   text-align: right;
+  overflow-wrap: anywhere;
 }
 
 input[type="number"]::-webkit-inner-spin-button,
@@ -328,18 +351,8 @@ input[type="number"]::-webkit-outer-spin-button {
   background-color: var(--hover);
 }
 
-.remaining-amount::before,
-.available-amount::before,
-.cost::before {
-  content: "$";
-}
-
 .budget-percentage::after {
   content: "%";
-}
-
-.budget-left::after {
-  content: "% left";
 }
 
 .simulation-result {
@@ -401,6 +414,32 @@ input[type="number"]::-webkit-outer-spin-button {
   grid-column: 1 / -1;
 }
 
+.budget-bar {
+  display: flex;
+  width: 100%;
+  height: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background-color: var(--secondary);
+}
+
+.budget-expenses-segment,
+.budget-purchase-segment {
+  display: block;
+  flex: 0 0 auto;
+  height: 100%;
+  transition: width 0.25s ease;
+}
+
+.budget-expenses-segment {
+  background-color: var(--hover);
+}
+
+.budget-purchase-segment {
+  background-color: var(--accent);
+}
+
 .budget-legend {
   display: flex;
 }
@@ -408,6 +447,27 @@ input[type="number"]::-webkit-outer-spin-button {
 .legend-guide {
   display: flex;
   gap: 2rem;
+}
+
+.legend-guide span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legend-guide span::before {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  content: "";
+}
+
+.legend-guide span:first-child::before {
+  background-color: var(--hover);
+}
+
+.legend-guide span:nth-child(2)::before {
+  background-color: var(--accent);
 }
 
 .budget-left {
@@ -471,7 +531,7 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 
   .logo-title {
-    display: none;
+    font-size: 1.5rem;
   }
 
   .intro {
@@ -495,7 +555,6 @@ input[type="number"]::-webkit-outer-spin-button {
 
   .expenses {
     min-width: 0;
-    grid-template-columns: minmax(0, 1fr) auto;
     padding: 1.5rem;
     gap: 0.75rem;
   }
@@ -503,6 +562,7 @@ input[type="number"]::-webkit-outer-spin-button {
   .expenses-title {
     font-size: clamp(0.875rem, 3.5vw, 1.25rem);
     white-space: normal;
+    text-wrap: wrap;
   }
 
   .total-expenses {
@@ -535,23 +595,6 @@ input[type="number"]::-webkit-outer-spin-button {
     width: 100%;
     margin-top: 0;
     font-size: 1rem;
-  }
-
-  .expenses-input .money-input {
-    flex: 0 0 38%;
-    width: auto;
-    min-width: 0;
-  }
-
-  .expense-row {
-    gap: 0.5rem;
-    padding: 0.75rem 0.5rem;
-    text-wrap: wrap;
-  }
-
-  .expense-row label {
-    min-width: 0;
-    white-space: normal;
   }
 
   .result-card {
@@ -599,5 +642,33 @@ input[type="number"]::-webkit-outer-spin-button {
 
   .result-message {
     overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 440px) {
+  .expense-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.65rem;
+    padding: 0.65rem;
+  }
+
+  .expense-name-field {
+    grid-column: 1 / -1;
+  }
+
+  .remove-expense {
+    min-width: 5.5rem;
+    padding-right: 0.65rem;
+    padding-left: 0.65rem;
+  }
+
+  .expenses-total {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .total-expenses {
+    text-align: left;
   }
 }
