@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Personal Budget Simulator</title>
+    <meta name="theme-color" content="#162a23" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <link rel="stylesheet" href="style.css" />
     <script
       src="https://kit.fontawesome.com/302e2e7116.js"
@@ -180,5 +183,16 @@
     </section>
 
     <script src="index.js" defer></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("./service-worker.js")
+            .catch((error) => {
+              console.error("Service worker registration failed:", error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>
