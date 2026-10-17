@@ -20,6 +20,7 @@ const availableAmountDisplay = document.querySelector(".available-amount");
 const purchaseCostDisplay = document.querySelector(".cost");
 const resultMessageDisplay = document.querySelector(".message-text");
 let expenseCount = 0;
+const STORAGE_KEY = "personal-budget-simulator";
 
 const pesoFormatter = new Intl.NumberFormat("en-PH", {
   style: "currency",
@@ -41,6 +42,46 @@ function getBudgetData() {
     purchaseName: purchaseInput.value,
     purchaseCost: purchaseCostInput.value,
   };
+}
+
+function saveBudgetData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(getBudgetData()));
+  } catch (error) {
+    console.error("Could not save budget data:", error);
+  }
+}
+
+function restoreBudgetData() {
+  try {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (!savedData) {
+      return;
+    }
+
+    const budgetData = JSON.parse(savedData);
+    if (
+      typeof budgetData.income !== "string" ||
+      !Array.isArray(budgetData.expenses) ||
+      !budgetData.expenses.every(
+        (expense) =>
+          expense &&
+          typeof expense.name === "string" &&
+          typeof expense.amount === "string",
+      ) ||
+      typeof budgetData.purchaseName !== "string" ||
+      typeof budgetData.purchaseCost !== "string"
+    ) {
+      throw new Error("Saved budget data has an invalid format.");
+    }
+
+    incomeInput.value = budgetData.income;
+    purchaseInput.value = budgetData.purchaseName;
+    purchaseCostInput.value = budgetData.purchaseCost;
+    budgetData.expenses.forEach((expense) => createExpenseRow(expense));
+  } catch (error) {
+    console.error("Could not restore budget data:", error);
+  }
 }
 
 function getNonNegativeAmount(input) {
@@ -132,7 +173,7 @@ function updateSimulation() {
   }
 }
 
-function createExpenseRow() {
+function createExpenseRow(savedExpense = null) {
   const row = document.createElement("div");
   row.className = "expense-row";
   row.setAttribute("role", "listitem");
@@ -152,6 +193,9 @@ function createExpenseRow() {
   nameInput.maxLength = 60;
   nameInput.placeholder = "e.g. Rent";
   nameInput.autocomplete = "off";
+  if (savedExpense) {
+    nameInput.value = savedExpense.name;
+  }
 
   nameField.append(nameLabel, nameInput);
 
@@ -171,6 +215,9 @@ function createExpenseRow() {
   amountInput.step = "0.01";
   amountInput.inputMode = "decimal";
   amountInput.placeholder = "0.00";
+  if (savedExpense) {
+    amountInput.value = savedExpense.amount;
+  }
 
   const pesoSign = document.createElement("span");
   pesoSign.textContent = "₱";
@@ -193,36 +240,47 @@ function createExpenseRow() {
       "aria-label",
       name ? `Remove ${name} expense` : "Remove expense",
     );
-    updateSimulation();
+    updateAndSaveBudget();
   });
 
   amountInput.addEventListener("input", () => {
     preventNegativeAmount(amountInput);
-    updateSimulation();
+    updateAndSaveBudget();
   });
 
   removeButton.addEventListener("click", () => {
     row.remove();
-    updateSimulation();
+    updateAndSaveBudget();
     addExpenseButton.focus();
   });
 
   row.append(nameField, amountField, removeButton);
   expenseList.append(row);
-  nameInput.focus();
+  if (!savedExpense) {
+    nameInput.focus();
+  }
   updateSimulation();
 }
 
-addExpenseButton.addEventListener("click", createExpenseRow);
+function updateAndSaveBudget() {
+  updateSimulation();
+  saveBudgetData();
+}
+
+addExpenseButton.addEventListener("click", () => {
+  createExpenseRow();
+  saveBudgetData();
+});
 
 [incomeInput, purchaseCostInput].forEach((input) => {
   input.addEventListener("input", () => {
     preventNegativeAmount(input);
-    updateSimulation();
+    updateAndSaveBudget();
   });
 });
 
-purchaseInput.addEventListener("input", updateSimulation);
-simulateButton.addEventListener("click", updateSimulation);
+purchaseInput.addEventListener("input", updateAndSaveBudget);
+simulateButton.addEventListener("click", updateAndSaveBudget);
 
+restoreBudgetData();
 updateSimulation();

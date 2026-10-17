@@ -1,4 +1,4 @@
-const CACHE_NAME = "budget-simulator-v1";
+const CACHE_NAME = "budget-simulator-v2";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -60,8 +60,24 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cachedResponse) =>
-      cachedResponse ? cachedResponse : fetch(request),
-    ),
+    fetch(request, { cache: "no-cache" })
+      .then((response) => {
+        if (!response.ok) {
+          return response;
+        }
+
+        return caches
+          .open(CACHE_NAME)
+          .then((cache) => cache.put(request, response.clone()))
+          .then(() => response);
+      })
+      .catch(() =>
+        caches.match(request).then((cachedResponse) => {
+          if (!cachedResponse) {
+            throw new Error(`No cached response available for ${request.url}`);
+          }
+          return cachedResponse;
+        }),
+      ),
   );
 });
