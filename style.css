@@ -190,6 +190,53 @@ section {
   transition: background-color 0.2s ease;
 }
 
+.expenses-input,
+.purchase-list {
+  max-height: 18rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-color: var(--hover) var(--secondary);
+  scrollbar-width: thin;
+}
+
+.expenses-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.expenses-input::-webkit-scrollbar,
+.purchase-list::-webkit-scrollbar {
+  width: 0.6rem;
+}
+
+.expenses-input::-webkit-scrollbar-track,
+.purchase-list::-webkit-scrollbar-track {
+  border-radius: 0.5rem;
+  background-color: var(--secondary);
+}
+
+.expenses-input::-webkit-scrollbar-thumb,
+.purchase-list::-webkit-scrollbar-thumb {
+  border: 2px solid var(--secondary);
+  border-radius: 0.5rem;
+  background-color: var(--hover);
+}
+
+.expenses-input::-webkit-scrollbar-thumb:hover,
+.purchase-list::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent);
+}
+
+.purchase-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
 .expense-row:hover {
   background-color: var(--hover);
 }
@@ -298,11 +345,6 @@ input[type="number"]::-webkit-outer-spin-button {
   margin: 0;
 }
 
-.purchase-card {
-  display: flex;
-  gap: 0.5rem;
-}
-
 .purchase-header {
   margin-bottom: 1.5rem;
 }
@@ -327,32 +369,6 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .purchase .money-input input {
   padding-left: 2rem;
-}
-
-.purchase-input {
-  flex: 2;
-}
-
-.cost-input {
-  flex: 1;
-}
-
-.simulate {
-  font-size: 1.5rem;
-  border: solid 2px var(--line);
-  background-color: transparent;
-  color: var(--secondary-text);
-  border-radius: 10px;
-  padding: 0 1rem;
-  height: 3rem;
-  margin-top: 0;
-  align-self: flex-end;
-  cursor: pointer;
-  transition: 0.2s ease-in-out;
-}
-
-.simulate:hover {
-  background-color: var(--hover);
 }
 
 .budget-percentage::after {
@@ -573,18 +589,6 @@ input[type="number"]::-webkit-outer-spin-button {
     font-size: clamp(1.25rem, 6vw, 2rem);
   }
 
-  .purchase-card {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .purchase-input,
-  .cost-input {
-    flex: initial;
-    width: 100%;
-    min-width: 0;
-  }
-
   .purchase label {
     font-size: 1.2rem;
     text-wrap: wrap;
@@ -592,13 +596,6 @@ input[type="number"]::-webkit-outer-spin-button {
 
   .purchase input {
     min-width: 0;
-  }
-
-  .simulate {
-    align-self: stretch;
-    width: 100%;
-    margin-top: 0;
-    font-size: 1rem;
   }
 
   .result-card {
@@ -656,7 +653,8 @@ input[type="number"]::-webkit-outer-spin-button {
     padding: 0.65rem;
   }
 
-  .expense-name-field {
+  .expense-name-field,
+  .purchase-name-field {
     grid-column: 1 / -1;
   }
 

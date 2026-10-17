@@ -1,10 +1,9 @@
 const expenseList = document.getElementById("expenseList");
 const addExpenseButton = document.getElementById("addExpense");
+const purchaseList = document.getElementById("purchaseList");
+const addPurchaseButton = document.getElementById("addPurchase");
 const totalExpensesDisplay = document.getElementById("totalExpenses");
 const incomeInput = document.getElementById("income");
-const purchaseInput = document.getElementById("purchase");
-const purchaseCostInput = document.getElementById("cost");
-const simulateButton = document.querySelector(".simulate");
 const remainingAmountDisplay = document.querySelector(".remaining-amount");
 const budgetStatusDisplay = document.querySelector(".budget-status");
 const budgetPercentageDisplay = document.querySelector(".budget-percentage");
@@ -20,6 +19,7 @@ const availableAmountDisplay = document.querySelector(".available-amount");
 const purchaseCostDisplay = document.querySelector(".cost");
 const resultMessageDisplay = document.querySelector(".message-text");
 let expenseCount = 0;
+let purchaseCount = 0;
 const STORAGE_KEY = "personal-budget-simulator";
 
 const pesoFormatter = new Intl.NumberFormat("en-PH", {
@@ -28,19 +28,29 @@ const pesoFormatter = new Intl.NumberFormat("en-PH", {
   maximumFractionDigits: 2,
 });
 
+function hasEntryContent(entry) {
+  return entry.name !== "" || entry.amount !== "";
+}
+
 function getBudgetData() {
   const expenses = [...expenseList.querySelectorAll(".expense-row")].map(
     (row) => ({
       name: row.querySelector(".expense-name").value,
       amount: row.querySelector(".expense-amount").value,
     }),
-  );
+  ).filter(hasEntryContent);
+
+  const purchases = [...purchaseList.querySelectorAll(".purchase-row")]
+    .map((row) => ({
+      name: row.querySelector(".purchase-name").value,
+      amount: row.querySelector(".purchase-amount").value,
+    }))
+    .filter(hasEntryContent);
 
   return {
     income: incomeInput.value,
     expenses,
-    purchaseName: purchaseInput.value,
-    purchaseCost: purchaseCostInput.value,
+    purchases,
   };
 }
 
@@ -60,43 +70,123 @@ function restoreBudgetData() {
     }
 
     const budgetData = JSON.parse(savedData);
+    if (!budgetData || typeof budgetData !== "object") {
+      throw new Error("Saved budget data has an invalid format.");
+    }
+
+    const savedExpenses = budgetData.expenses;
+    const savedPurchases =
+      budgetData.purchases ??
+      (typeof budgetData.purchaseName === "string" &&
+      typeof budgetData.purchaseCost === "string"
+        ? [{ name: budgetData.purchaseName, amount: budgetData.purchaseCost }]
+        : []);
     if (
       typeof budgetData.income !== "string" ||
-      !Array.isArray(budgetData.expenses) ||
-      !budgetData.expenses.every(
+      !Array.isArray(savedExpenses) ||
+      !savedExpenses.every(
         (expense) =>
           expense &&
           typeof expense.name === "string" &&
           typeof expense.amount === "string",
       ) ||
-      typeof budgetData.purchaseName !== "string" ||
-      typeof budgetData.purchaseCost !== "string"
+      !Array.isArray(savedPurchases) ||
+      !savedPurchases.every(
+        (purchase) =>
+          purchase &&
+          typeof purchase.name === "string" &&
+          typeof purchase.amount === "string",
+      )
     ) {
       throw new Error("Saved budget data has an invalid format.");
     }
 
-    incomeInput.value = budgetData.income;
-    purchaseInput.value = budgetData.purchaseName;
-    purchaseCostInput.value = budgetData.purchaseCost;
-    budgetData.expenses.forEach((expense) => createExpenseRow(expense));
+    incomeInput.value = formatMoneyValue(budgetData.income);
+    savedExpenses.filter(hasEntryContent).forEach((expense) => {
+      createExpenseRow(expense);
+    });
+    savedPurchases.filter(hasEntryContent).forEach((purchase) => {
+      createPurchaseRow(purchase);
+    });
   } catch (error) {
     console.error("Could not restore budget data:", error);
   }
 }
 
-function getNonNegativeAmount(input) {
-  const amount = Number(input.value);
-  return Number.isFinite(amount) && amount > 0 ? amount : 0;
+function cleanMoneyValue(value) {
+  const cleaned = String(value).replace(/[^\d.]/g, "");
+  const decimalPosition = cleaned.indexOf(".");
+  if (decimalPosition === -1) {
+    return cleaned.replace(/^0+(?=\d)/, "");
+  }
+
+  const whole = cleaned
+    .slice(0, decimalPosition)
+    .replace(/^0+(?=\d)/, "");
+  const fraction = cleaned
+    .slice(decimalPosition + 1)
+    .replace(/\./g, "")
+    .slice(0, 2);
+  return `${whole || "0"}.${fraction}`;
 }
 
-function preventNegativeAmount(input) {
-  if (input.value !== "" && Number(input.value) < 0) {
-    input.value = "0";
+function formatMoneyValue(value) {
+  const cleaned = cleanMoneyValue(value);
+  if (!cleaned) {
+    return "";
   }
+
+  const [whole, fraction] = cleaned.split(".");
+  const groupedWhole = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return fraction === undefined ? groupedWhole : `${groupedWhole}.${fraction}`;
+}
+
+function formatMoneyInput(input) {
+  const selectionStart = input.selectionStart ?? input.value.length;
+  const meaningfulCharactersBeforeCaret = cleanMoneyValue(
+    input.value.slice(0, selectionStart),
+  ).length;
+  input.value = formatMoneyValue(input.value);
+
+  let caretPosition = 0;
+  let meaningfulCharacters = 0;
+  while (
+    caretPosition < input.value.length &&
+    meaningfulCharacters < meaningfulCharactersBeforeCaret
+  ) {
+    if (/[\d.]/.test(input.value[caretPosition])) {
+      meaningfulCharacters++;
+    }
+    caretPosition++;
+  }
+
+  input.setSelectionRange(caretPosition, caretPosition);
+}
+
+function attachMoneyInput(input) {
+  input.addEventListener("input", () => {
+    formatMoneyInput(input);
+    updateAndSaveBudget();
+  });
+  input.addEventListener("blur", () => {
+    input.value = formatMoneyValue(input.value);
+  });
+}
+
+function getNonNegativeAmount(input) {
+  const amount = Number(cleanMoneyValue(input.value));
+  return Number.isFinite(amount) && amount > 0 ? amount : 0;
 }
 
 function getTotalExpenses() {
   return [...expenseList.querySelectorAll(".expense-amount")].reduce(
+    (total, input) => total + getNonNegativeAmount(input),
+    0,
+  );
+}
+
+function getTotalPurchases() {
+  return [...purchaseList.querySelectorAll(".purchase-amount")].reduce(
     (total, input) => total + getNonNegativeAmount(input),
     0,
   );
@@ -108,8 +198,12 @@ function updateTotalExpenses(totalExpenses) {
 }
 
 function updateBudgetBar(income, expenses, purchaseCost, budgetUsed) {
-  const expensePercentage = income > 0 ? (expenses / income) * 100 : 0;
-  const purchasePercentage = income > 0 ? (purchaseCost / income) * 100 : 0;
+  const expensePercentage =
+    income > 0 ? Math.min((expenses / income) * 100, 100) : 0;
+  const purchasePercentage =
+    income > 0
+      ? Math.min((purchaseCost / income) * 100, 100 - expensePercentage)
+      : 0;
   const percentageValue = Math.min(Math.max(budgetUsed, 0), 100);
 
   budgetExpensesSegment.style.width = `${expensePercentage}%`;
@@ -126,7 +220,8 @@ function updateBudgetBar(income, expenses, purchaseCost, budgetUsed) {
 function updateSimulation() {
   const income = getNonNegativeAmount(incomeInput);
   const expenses = getTotalExpenses();
-  const purchaseCost = getNonNegativeAmount(purchaseCostInput);
+  const purchaseCost = getTotalPurchases();
+  const purchases = [...purchaseList.querySelectorAll(".purchase-row")];
   const availableNow = income - expenses;
   const remainingAfterPurchase = availableNow - purchaseCost;
   const totalUsed = expenses + purchaseCost;
@@ -156,14 +251,20 @@ function updateSimulation() {
 
   if (!hasIncome) {
     resultMessageDisplay.textContent =
-      "Enter your monthly income to see how this purchase affects your budget.";
+      "Enter your monthly income to see how these purchases affect your budget.";
   } else if (isOverBudget) {
-    resultMessageDisplay.textContent = `This purchase would put you ${pesoFormatter.format(
+    resultMessageDisplay.textContent = `Monthly expenses and these purchases would put you ${pesoFormatter.format(
       Math.abs(remainingAfterPurchase),
     )} over your monthly income.`;
   } else if (purchaseCost > 0) {
-    const purchaseName = purchaseInput.value.trim() || "This purchase";
-    resultMessageDisplay.textContent = `${purchaseName} would leave you ${pesoFormatter.format(
+    const purchaseNames = purchases
+      .map((row) => row.querySelector(".purchase-name").value.trim())
+      .filter(Boolean);
+    const purchaseDescription =
+      purchases.length === 1 && purchaseNames.length === 1
+        ? purchaseNames[0]
+        : "These purchases";
+    resultMessageDisplay.textContent = `${purchaseDescription} would leave you ${pesoFormatter.format(
       remainingAfterPurchase,
     )} for the rest of the month.`;
   } else {
@@ -173,28 +274,28 @@ function updateSimulation() {
   }
 }
 
-function createExpenseRow(savedExpense = null) {
+function createEntryRow({ savedEntry, kind, list, rowClass, count }) {
   const row = document.createElement("div");
-  row.className = "expense-row";
+  row.className = rowClass;
   row.setAttribute("role", "listitem");
 
   const nameField = document.createElement("div");
-  nameField.className = "expense-field expense-name-field";
+  nameField.className = `expense-field ${kind}-name-field`;
 
-  const nameId = `expense-name-${expenseCount++}`;
+  const nameId = `${kind}-name-${count()}`;
   const nameLabel = document.createElement("label");
   nameLabel.htmlFor = nameId;
-  nameLabel.textContent = "Expense name";
+  nameLabel.textContent = kind === "expense" ? "Expense name" : "Purchase";
 
   const nameInput = document.createElement("input");
-  nameInput.className = "expense-name";
+  nameInput.className = `${kind}-name`;
   nameInput.id = nameId;
   nameInput.type = "text";
   nameInput.maxLength = 60;
-  nameInput.placeholder = "e.g. Rent";
+  nameInput.placeholder = kind === "expense" ? "e.g. Rent" : "e.g. New Laptop";
   nameInput.autocomplete = "off";
-  if (savedExpense) {
-    nameInput.value = savedExpense.name;
+  if (savedEntry) {
+    nameInput.value = savedEntry.name;
   }
 
   nameField.append(nameLabel, nameInput);
@@ -205,18 +306,18 @@ function createExpenseRow(savedExpense = null) {
   const amountId = `${nameId}-amount`;
   const amountLabel = document.createElement("label");
   amountLabel.htmlFor = amountId;
-  amountLabel.textContent = "Amount (PHP)";
+  amountLabel.textContent =
+    kind === "expense" ? "Amount (PHP)" : "Estimated Cost";
 
   const amountInput = document.createElement("input");
-  amountInput.className = "expense-amount";
+  amountInput.className = `${kind}-amount`;
   amountInput.id = amountId;
-  amountInput.type = "number";
-  amountInput.min = "0";
-  amountInput.step = "0.01";
+  amountInput.type = "text";
   amountInput.inputMode = "decimal";
+  amountInput.autocomplete = "off";
   amountInput.placeholder = "0.00";
-  if (savedExpense) {
-    amountInput.value = savedExpense.amount;
+  if (savedEntry) {
+    amountInput.value = formatMoneyValue(savedEntry.amount);
   }
 
   const pesoSign = document.createElement("span");
@@ -232,34 +333,51 @@ function createExpenseRow(savedExpense = null) {
   removeButton.className = "remove-expense";
   removeButton.type = "button";
   removeButton.textContent = "Remove";
-  removeButton.setAttribute("aria-label", "Remove expense");
+  removeButton.setAttribute("aria-label", `Remove ${kind}`);
 
   nameInput.addEventListener("input", () => {
     const name = nameInput.value.trim();
     removeButton.setAttribute(
       "aria-label",
-      name ? `Remove ${name} expense` : "Remove expense",
+      name ? `Remove ${name} ${kind}` : `Remove ${kind}`,
     );
     updateAndSaveBudget();
   });
 
-  amountInput.addEventListener("input", () => {
-    preventNegativeAmount(amountInput);
-    updateAndSaveBudget();
-  });
+  attachMoneyInput(amountInput);
 
   removeButton.addEventListener("click", () => {
     row.remove();
     updateAndSaveBudget();
-    addExpenseButton.focus();
+    (kind === "expense" ? addExpenseButton : addPurchaseButton).focus();
   });
 
   row.append(nameField, amountField, removeButton);
-  expenseList.append(row);
-  if (!savedExpense) {
+  list.append(row);
+  if (!savedEntry) {
     nameInput.focus();
   }
   updateSimulation();
+}
+
+function createExpenseRow(savedExpense = null) {
+  createEntryRow({
+    savedEntry: savedExpense,
+    kind: "expense",
+    list: expenseList,
+    rowClass: "expense-row",
+    count: () => expenseCount++,
+  });
+}
+
+function createPurchaseRow(savedPurchase = null) {
+  createEntryRow({
+    savedEntry: savedPurchase,
+    kind: "purchase",
+    list: purchaseList,
+    rowClass: "expense-row purchase-row",
+    count: () => purchaseCount++,
+  });
 }
 
 function updateAndSaveBudget() {
@@ -272,15 +390,12 @@ addExpenseButton.addEventListener("click", () => {
   saveBudgetData();
 });
 
-[incomeInput, purchaseCostInput].forEach((input) => {
-  input.addEventListener("input", () => {
-    preventNegativeAmount(input);
-    updateAndSaveBudget();
-  });
+addPurchaseButton.addEventListener("click", () => {
+  createPurchaseRow();
+  saveBudgetData();
 });
 
-purchaseInput.addEventListener("input", updateAndSaveBudget);
-simulateButton.addEventListener("click", updateAndSaveBudget);
+attachMoneyInput(incomeInput);
 
 restoreBudgetData();
 updateSimulation();
