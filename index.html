@@ -38,6 +38,16 @@
     <section class="simulator">
       <div class="simulator-card">
         <div class="income">
+          <div class="month-selector">
+            <label for="budgetMonth">BUDGET MONTH</label>
+            <input
+              type="month"
+              id="budgetMonth"
+              name="budgetMonth"
+              aria-label="Select budget month"
+            />
+          </div>
+
           <div class="income-header">
             <label for="income" class="title">MONTHLY INCOME</label>
           </div>
@@ -86,77 +96,104 @@
             <p>What are you thinking about buying?</p>
           </div>
 
-          <div
-            class="purchase-list"
-            id="purchaseList"
-            role="list"
-            aria-label="Potential purchases"
-          ></div>
+          <div id="purchaseControls">
+            <div
+              class="purchase-list"
+              id="purchaseList"
+              role="list"
+              aria-label="Potential purchases"
+            ></div>
 
-          <button class="add-expense" id="addPurchase" type="button">
-            + Add Purchase
-          </button>
+            <button class="add-expense" id="addPurchase" type="button">
+              + Add Purchase
+            </button>
+          </div>
+          <p class="purchase-notice" id="purchaseNotice" hidden>
+            Potential purchases are shown and counted only for the current
+            month. Saved purchases from other months are kept but hidden.
+          </p>
         </div>
       </div>
     </section>
 
     <section class="simulation-result">
-      <div class="result-card">
+      <div class="result-card chart-result-card">
         <div class="result-header">
-          <h3 class="title">AFTER THESE PURCHASES</h3>
+          <h3 class="title">MONTHLY BUDGET BREAKDOWN</h3>
           <p class="budget-status">Within budget</p>
         </div>
 
-        <div class="remaining-balance">
-          <p>You would have</p>
-          <h2 class="remaining-amount">₱0.00</h2>
-          <p>remaining this month</p>
-        </div>
-
-        <div class="budget-breakdown">
-          <p>Monthly budget used</p>
-          <p class="budget-percentage">0</p>
-
+        <p class="chart-month" id="chartMonth"></p>
+        <div class="budget-chart-layout">
           <div
-            class="budget-bar"
-            role="progressbar"
-            aria-label="Monthly budget used"
-            aria-valuemin="0"
-            aria-valuemax="100"
-            aria-valuenow="0"
-            aria-valuetext="0% of monthly income used"
+            class="budget-pie-chart"
+            id="budgetPieChart"
+            role="img"
+            aria-label="Budget breakdown chart"
           >
-            <span class="budget-expenses-segment" aria-hidden="true"></span>
-            <span class="budget-purchase-segment" aria-hidden="true"></span>
+            <span class="chart-center-label">Budget</span>
           </div>
 
-          <div class="budget-legend">
-            <div class="legend-guide">
-              <span>Expenses</span>
-              <span>Purchase</span>
+          <div class="chart-legend" aria-live="polite">
+            <div class="chart-legend-item">
+              <span
+                class="chart-swatch expense-swatch"
+                aria-hidden="true"
+              ></span>
+              <div>
+                <p>Monthly expenses</p>
+                <strong id="chartExpenses">₱0.00</strong>
+                <span
+                  class="chart-category-percentage"
+                  id="chartExpensesPercent"
+                  >0%</span
+                >
+              </div>
             </div>
-            <p class="budget-left">0</p>
+            <div class="chart-legend-item" id="purchaseChartLegend">
+              <span class="chart-swatch purchase-swatch" aria-hidden="true"></span>
+              <div>
+                <p>Potential purchases</p>
+                <strong id="chartPurchases">₱0.00</strong>
+                <span
+                  class="chart-category-percentage"
+                  id="chartPurchasesPercent"
+                  >0%</span
+                >
+              </div>
+            </div>
+            <div class="chart-legend-item">
+              <span class="chart-swatch remaining-swatch" aria-hidden="true"></span>
+              <div>
+                <p>Remaining budget</p>
+                <strong id="chartRemaining">₱0.00</strong>
+                <span
+                  class="chart-category-percentage"
+                  id="chartRemainingPercent"
+                  >0%</span
+                >
+              </div>
+            </div>
           </div>
         </div>
+
+        <p class="chart-percentage-note" id="chartPercentageNote">
+          Percentages are of monthly income.
+        </p>
+        <p class="chart-over-budget" id="chartOverBudget" hidden></p>
 
         <div class="purchase-summary">
           <div class="summary-item">
-            <p>Available now</p>
+            <p>Income</p>
             <h2 class="available-amount">₱0.00</h2>
           </div>
 
           <div class="summary-item">
-            <p>Total purchase cost</p>
+            <p>Total spending</p>
             <h2 class="cost">₱0.00</h2>
           </div>
         </div>
 
-        <p class="result-message">
-          <i class="fa-solid fa-lightbulb"></i>
-          <span class="message-text">
-            Enter your budget and simulate a purchase to see the results.
-          </span>
-        </p>
       </div>
     </section>
 

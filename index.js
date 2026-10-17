@@ -2,25 +2,38 @@ const expenseList = document.getElementById("expenseList");
 const addExpenseButton = document.getElementById("addExpense");
 const purchaseList = document.getElementById("purchaseList");
 const addPurchaseButton = document.getElementById("addPurchase");
+const budgetMonthInput = document.getElementById("budgetMonth");
+const purchaseControls = document.getElementById("purchaseControls");
+const purchaseNotice = document.getElementById("purchaseNotice");
 const totalExpensesDisplay = document.getElementById("totalExpenses");
 const incomeInput = document.getElementById("income");
-const remainingAmountDisplay = document.querySelector(".remaining-amount");
 const budgetStatusDisplay = document.querySelector(".budget-status");
-const budgetPercentageDisplay = document.querySelector(".budget-percentage");
-const budgetBar = document.querySelector(".budget-bar");
-const budgetExpensesSegment = document.querySelector(
-  ".budget-expenses-segment",
-);
-const budgetPurchaseSegment = document.querySelector(
-  ".budget-purchase-segment",
-);
-const budgetLeftDisplay = document.querySelector(".budget-left");
 const availableAmountDisplay = document.querySelector(".available-amount");
 const purchaseCostDisplay = document.querySelector(".cost");
-const resultMessageDisplay = document.querySelector(".message-text");
+const chartMonthDisplay = document.getElementById("chartMonth");
+const budgetPieChart = document.getElementById("budgetPieChart");
+const chartExpensesDisplay = document.getElementById("chartExpenses");
+const chartExpensesPercentDisplay = document.getElementById(
+  "chartExpensesPercent",
+);
+const chartPurchasesDisplay = document.getElementById("chartPurchases");
+const chartPurchasesPercentDisplay = document.getElementById(
+  "chartPurchasesPercent",
+);
+const chartRemainingDisplay = document.getElementById("chartRemaining");
+const chartRemainingPercentDisplay = document.getElementById(
+  "chartRemainingPercent",
+);
+const purchaseChartLegend = document.getElementById("purchaseChartLegend");
+const chartPercentageNote = document.getElementById("chartPercentageNote");
+const chartOverBudget = document.getElementById("chartOverBudget");
 let expenseCount = 0;
 let purchaseCount = 0;
 const STORAGE_KEY = "personal-budget-simulator";
+const MONTH_STORAGE_PREFIX = `${STORAGE_KEY}:month:`;
+const SELECTED_MONTH_KEY = `${STORAGE_KEY}:selected-month`;
+let activeMonthKey;
+let hiddenPurchases = [];
 
 const pesoFormatter = new Intl.NumberFormat("en-PH", {
   style: "currency",
@@ -32,6 +45,66 @@ function hasEntryContent(entry) {
   return entry.name !== "" || entry.amount !== "";
 }
 
+function getCurrentMonthKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function isValidMonthKey(monthKey) {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(monthKey);
+}
+
+function isCurrentMonthSelected() {
+  return activeMonthKey === getCurrentMonthKey();
+}
+
+function getMonthStorageKey(monthKey) {
+  return `${MONTH_STORAGE_PREFIX}${monthKey}`;
+}
+
+function normalizeEntryList(entries) {
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+
+  return entries
+    .filter(
+      (entry) =>
+        entry &&
+        (typeof entry.name === "string" ||
+          typeof entry.name === "number") &&
+        (typeof entry.amount === "string" ||
+          typeof entry.amount === "number"),
+    )
+    .map((entry) => ({
+      name: String(entry.name),
+      amount: String(entry.amount),
+    }))
+    .filter(hasEntryContent);
+}
+
+function normalizeBudgetData(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("Saved budget data has an invalid format.");
+  }
+
+  const purchases =
+    data.purchases ??
+    (typeof data.purchaseName === "string" &&
+    typeof data.purchaseCost === "string"
+      ? [{ name: data.purchaseName, amount: data.purchaseCost }]
+      : []);
+
+  return {
+    income:
+      typeof data.income === "string" || typeof data.income === "number"
+        ? String(data.income)
+        : "",
+    expenses: normalizeEntryList(data.expenses),
+    purchases: normalizeEntryList(purchases),
+  };
+}
+
 function getBudgetData() {
   const expenses = [...expenseList.querySelectorAll(".expense-row")].map(
     (row) => ({
@@ -40,77 +113,108 @@ function getBudgetData() {
     }),
   ).filter(hasEntryContent);
 
-  const purchases = [...purchaseList.querySelectorAll(".purchase-row")]
-    .map((row) => ({
-      name: row.querySelector(".purchase-name").value,
-      amount: row.querySelector(".purchase-amount").value,
-    }))
-    .filter(hasEntryContent);
+  const purchases = isCurrentMonthSelected()
+    ? [...purchaseList.querySelectorAll(".purchase-row")].map((row) => ({
+        name: row.querySelector(".purchase-name").value,
+        amount: row.querySelector(".purchase-amount").value,
+      }))
+    : hiddenPurchases;
 
   return {
     income: incomeInput.value,
     expenses,
-    purchases,
+    purchases: purchases.filter(hasEntryContent),
   };
 }
 
 function saveBudgetData() {
+  if (!activeMonthKey) {
+    return;
+  }
+
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(getBudgetData()));
+    localStorage.setItem(
+      getMonthStorageKey(activeMonthKey),
+      JSON.stringify(getBudgetData()),
+    );
   } catch (error) {
     console.error("Could not save budget data:", error);
   }
 }
 
-function restoreBudgetData() {
+function readBudgetData(monthKey) {
   try {
-    const savedData = localStorage.getItem(STORAGE_KEY);
-    if (!savedData) {
-      return;
+    const monthlyData = localStorage.getItem(getMonthStorageKey(monthKey));
+    if (monthlyData !== null) {
+      return normalizeBudgetData(JSON.parse(monthlyData));
     }
 
-    const budgetData = JSON.parse(savedData);
-    if (!budgetData || typeof budgetData !== "object") {
-      throw new Error("Saved budget data has an invalid format.");
+    if (monthKey === getCurrentMonthKey()) {
+      const legacyData = localStorage.getItem(STORAGE_KEY);
+      if (legacyData !== null) {
+        const migratedData = normalizeBudgetData(JSON.parse(legacyData));
+        try {
+          localStorage.setItem(
+            getMonthStorageKey(monthKey),
+            JSON.stringify(migratedData),
+          );
+        } catch (error) {
+          console.error("Could not migrate the legacy budget data:", error);
+        }
+        return migratedData;
+      }
     }
 
-    const savedExpenses = budgetData.expenses;
-    const savedPurchases =
-      budgetData.purchases ??
-      (typeof budgetData.purchaseName === "string" &&
-      typeof budgetData.purchaseCost === "string"
-        ? [{ name: budgetData.purchaseName, amount: budgetData.purchaseCost }]
-        : []);
-    if (
-      typeof budgetData.income !== "string" ||
-      !Array.isArray(savedExpenses) ||
-      !savedExpenses.every(
-        (expense) =>
-          expense &&
-          typeof expense.name === "string" &&
-          typeof expense.amount === "string",
-      ) ||
-      !Array.isArray(savedPurchases) ||
-      !savedPurchases.every(
-        (purchase) =>
-          purchase &&
-          typeof purchase.name === "string" &&
-          typeof purchase.amount === "string",
-      )
-    ) {
-      throw new Error("Saved budget data has an invalid format.");
-    }
-
-    incomeInput.value = formatMoneyValue(budgetData.income);
-    savedExpenses.filter(hasEntryContent).forEach((expense) => {
-      createExpenseRow(expense);
-    });
-    savedPurchases.filter(hasEntryContent).forEach((purchase) => {
-      createPurchaseRow(purchase);
-    });
+    return { income: "", expenses: [], purchases: [] };
   } catch (error) {
-    console.error("Could not restore budget data:", error);
+    console.error(`Could not load budget data for ${monthKey}:`, error);
+    return { income: "", expenses: [], purchases: [] };
   }
+}
+
+function clearBudgetRows() {
+  expenseList.replaceChildren();
+  purchaseList.replaceChildren();
+  expenseCount = 0;
+  purchaseCount = 0;
+}
+
+function loadBudgetData(monthKey) {
+  clearBudgetRows();
+  const budgetData = readBudgetData(monthKey);
+  incomeInput.value = formatMoneyValue(budgetData.income);
+  hiddenPurchases = budgetData.purchases;
+
+  budgetData.expenses.forEach((expense) => createExpenseRow(expense));
+  const showPurchases = monthKey === getCurrentMonthKey();
+  purchaseControls.hidden = !showPurchases;
+  purchaseNotice.hidden = showPurchases;
+  purchaseChartLegend.hidden = !showPurchases;
+  if (showPurchases) {
+    budgetData.purchases.forEach((purchase) => createPurchaseRow(purchase));
+  }
+
+  updateSimulation();
+}
+
+function restoreBudgetData() {
+  const currentMonth = getCurrentMonthKey();
+  let savedMonth = currentMonth;
+
+  try {
+    const storedMonth = localStorage.getItem(SELECTED_MONTH_KEY);
+    if (storedMonth && isValidMonthKey(storedMonth)) {
+      savedMonth = storedMonth;
+    } else if (storedMonth) {
+      console.error("Saved budget month is invalid:", storedMonth);
+    }
+  } catch (error) {
+    console.error("Could not read the saved budget month:", error);
+  }
+
+  budgetMonthInput.value = savedMonth;
+  activeMonthKey = savedMonth;
+  loadBudgetData(activeMonthKey);
 }
 
 function cleanMoneyValue(value) {
@@ -197,81 +301,70 @@ function updateTotalExpenses(totalExpenses) {
   totalExpensesDisplay.textContent = pesoFormatter.format(totalExpenses);
 }
 
-function updateBudgetBar(income, expenses, purchaseCost, budgetUsed) {
-  const expensePercentage =
-    income > 0 ? Math.min((expenses / income) * 100, 100) : 0;
-  const purchasePercentage =
-    income > 0
-      ? Math.min((purchaseCost / income) * 100, 100 - expensePercentage)
-      : 0;
-  const percentageValue = Math.min(Math.max(budgetUsed, 0), 100);
-
-  budgetExpensesSegment.style.width = `${expensePercentage}%`;
-  budgetPurchaseSegment.style.width = `${purchasePercentage}%`;
-  budgetBar.setAttribute("aria-valuenow", percentageValue.toFixed(1));
-
-  const budgetDescription =
-    income > 0
-      ? `${budgetUsed.toFixed(1)}% of monthly income used`
-      : "Enter monthly income to calculate budget used";
-  budgetBar.setAttribute("aria-valuetext", budgetDescription);
-}
-
 function updateSimulation() {
   const income = getNonNegativeAmount(incomeInput);
   const expenses = getTotalExpenses();
-  const purchaseCost = getTotalPurchases();
-  const purchases = [...purchaseList.querySelectorAll(".purchase-row")];
-  const availableNow = income - expenses;
-  const remainingAfterPurchase = availableNow - purchaseCost;
+  const showPurchases = isCurrentMonthSelected();
+  const purchaseCost = showPurchases ? getTotalPurchases() : 0;
   const totalUsed = expenses + purchaseCost;
-  const budgetUsed = income > 0 ? (totalUsed / income) * 100 : 0;
-  const budgetRemaining = income > 0 ? 100 - budgetUsed : 0;
+  const remaining = Math.max(income - totalUsed, 0);
   const hasIncome = income > 0;
   const isOverBudget = totalUsed > income;
+  const chartTotal = isOverBudget ? totalUsed : income;
+  const expensesPercent =
+    chartTotal > 0 ? (expenses / chartTotal) * 100 : 0;
+  const purchasesPercent =
+    chartTotal > 0 ? (purchaseCost / chartTotal) * 100 : 0;
+  const remainingPercent =
+    chartTotal > 0 ? (remaining / chartTotal) * 100 : 0;
+  const expenseEnd = expensesPercent;
+  const purchaseEnd = expenseEnd + purchasesPercent;
 
   updateTotalExpenses(expenses);
-  remainingAmountDisplay.textContent = pesoFormatter.format(
-    remainingAfterPurchase,
+  availableAmountDisplay.textContent = pesoFormatter.format(income);
+  purchaseCostDisplay.textContent = pesoFormatter.format(totalUsed);
+  chartExpensesDisplay.textContent = pesoFormatter.format(expenses);
+  chartExpensesPercentDisplay.textContent = `${expensesPercent.toFixed(1)}%`;
+  chartPurchasesDisplay.textContent = pesoFormatter.format(purchaseCost);
+  chartPurchasesPercentDisplay.textContent = `${purchasesPercent.toFixed(1)}%`;
+  chartRemainingDisplay.textContent = pesoFormatter.format(remaining);
+  chartRemainingPercentDisplay.textContent = `${remainingPercent.toFixed(1)}%`;
+  chartMonthDisplay.textContent = new Intl.DateTimeFormat("en-PH", {
+    month: "long",
+    year: "numeric",
+  }).format(
+    new Date(
+      Number(activeMonthKey.slice(0, 4)),
+      Number(activeMonthKey.slice(5, 7)) - 1,
+      1,
+    ),
   );
-  availableAmountDisplay.textContent = pesoFormatter.format(availableNow);
-  purchaseCostDisplay.textContent = pesoFormatter.format(purchaseCost);
-  budgetPercentageDisplay.textContent = hasIncome ? budgetUsed.toFixed(1) : "0";
-  budgetLeftDisplay.textContent = hasIncome
-    ? `${Math.max(budgetRemaining, 0).toFixed(1)}% left`
-    : "—";
+  budgetPieChart.style.background =
+    chartTotal > 0
+      ? `conic-gradient(var(--chart-expenses) 0% ${expenseEnd}%, var(--chart-purchases) ${expenseEnd}% ${purchaseEnd}%, var(--chart-remaining) ${purchaseEnd}% 100%)`
+      : "var(--secondary)";
+  budgetPieChart.setAttribute(
+    "aria-label",
+    `${chartMonthDisplay.textContent}: expenses ${pesoFormatter.format(expenses)}; potential purchases ${pesoFormatter.format(purchaseCost)}; remaining budget ${pesoFormatter.format(remaining)}.`,
+  );
+  chartPercentageNote.textContent = isOverBudget
+    ? "Percentages show each category's share of total spending because spending exceeds income."
+    : hasIncome
+      ? "Percentages are of monthly income."
+      : "Enter income to show budget percentages.";
+  chartOverBudget.hidden = !isOverBudget;
+  chartOverBudget.textContent = isOverBudget
+    ? `Over budget by ${pesoFormatter.format(totalUsed - income)}.`
+    : "";
 
   budgetStatusDisplay.textContent = !hasIncome
-    ? "Add income"
+    ? isOverBudget
+      ? "Over budget"
+      : "Add income"
     : isOverBudget
       ? "Over budget"
       : "Within budget";
   budgetStatusDisplay.classList.toggle("is-over-budget", isOverBudget);
-  updateBudgetBar(income, expenses, purchaseCost, budgetUsed);
-
-  if (!hasIncome) {
-    resultMessageDisplay.textContent =
-      "Enter your monthly income to see how these purchases affect your budget.";
-  } else if (isOverBudget) {
-    resultMessageDisplay.textContent = `Monthly expenses and these purchases would put you ${pesoFormatter.format(
-      Math.abs(remainingAfterPurchase),
-    )} over your monthly income.`;
-  } else if (purchaseCost > 0) {
-    const purchaseNames = purchases
-      .map((row) => row.querySelector(".purchase-name").value.trim())
-      .filter(Boolean);
-    const purchaseDescription =
-      purchases.length === 1 && purchaseNames.length === 1
-        ? purchaseNames[0]
-        : "These purchases";
-    resultMessageDisplay.textContent = `${purchaseDescription} would leave you ${pesoFormatter.format(
-      remainingAfterPurchase,
-    )} for the rest of the month.`;
-  } else {
-    resultMessageDisplay.textContent = `You have ${pesoFormatter.format(
-      availableNow,
-    )} remaining after monthly expenses.`;
-  }
 }
 
 function createEntryRow({ savedEntry, kind, list, rowClass, count }) {
@@ -393,6 +486,27 @@ addExpenseButton.addEventListener("click", () => {
 addPurchaseButton.addEventListener("click", () => {
   createPurchaseRow();
   saveBudgetData();
+});
+
+budgetMonthInput.addEventListener("change", () => {
+  const selectedMonth = budgetMonthInput.value;
+  if (!isValidMonthKey(selectedMonth)) {
+    budgetMonthInput.value = activeMonthKey;
+    return;
+  }
+
+  if (selectedMonth === activeMonthKey) {
+    return;
+  }
+
+  saveBudgetData();
+  activeMonthKey = selectedMonth;
+  try {
+    localStorage.setItem(SELECTED_MONTH_KEY, activeMonthKey);
+  } catch (error) {
+    console.error("Could not save the selected budget month:", error);
+  }
+  loadBudgetData(activeMonthKey);
 });
 
 attachMoneyInput(incomeInput);
